@@ -10,7 +10,7 @@ format:
                 toc-depth: 5        # Include headers up to level 3 (###)
                 toc-title: "On this page" # Custom title for the TOC
                 smooth-scroll: true # Enable smooth scrolling
-                embed-resources: true # Make the html file self contained
+                # embed-resources: true # Make the html file self contained
 reference-location: margin
 citation-location: margin
 ---
@@ -28,7 +28,10 @@ pacman::p_load(
         DT # package for table formatting and styling
 )
 
-source(here("code", "01_prep.R"))
+# source(here("code", "01_prep.R"))
+swiss_can <- readRDS(here("data", "swiss_can.rds"))
+swiss_plus <- readRDS(here("data", "swiss_plus.rds"))
+
 ```
 
 ```{css}
@@ -37,7 +40,8 @@ th { font-size: 11px; } /* header font */
 td { font-size: 11px; } /* cell font */
 ```
 
-## Directly standardised rates
+## CI5 XII
+### Directly standardised rates
 
 This section uses data from Volume XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5-xii/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
@@ -48,9 +52,7 @@ World and European Standard Populations were downloaded from:
 When using the `calculate_dsr()` function from the `PHEindicatormethods` package, when the cases within the strata are less than 10 the DSR is suppressed ("When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output").
 :::
 
-### Using European Standard Population
-
-#### By sex
+#### Using European Standard Population
 
 ```{r}
 # "When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output." (from the `PHEindicatormethods::calculate_dsr()` funtion)
@@ -62,7 +64,7 @@ swiss_can |>
         #         , id_region %in% c("Geneva", "Vaud")
         # ) |> 
         # Add grouping variables of interest
-        group_by(cancer_label, id_region, sex) |> 
+        group_by(period, cancer_label, id_region, sex) |> 
         PHEindicatormethods::calculate_dsr(
                 x = cases, # field containing count of events
                 n = py, # field containing population denominators
@@ -72,17 +74,18 @@ swiss_can |>
         mutate(crude_rate = total_count/total_pop*100000) |> 
         relocate(crude_rate, .before = value) |> 
         rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
-        mutate(across(c(crude_rate:upper_CI), ~ sprintf("%.2f", .x))) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2))) |> 
         DT::datatable(
                 filter = "top",
+                options = list(
+                        pageLength = 13 
+                ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'
         )
 ```
 
-### Using World Standard Population
-
-#### By sex
+#### Using World Standard Population
 
 ```{r}
 swiss_can |> 
@@ -90,7 +93,7 @@ swiss_can |>
         #         cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
         #         id_region %in% c("Geneva")
         # ) |> 
-        group_by(cancer_label, id_region, sex) |> 
+        group_by(period, cancer_label, id_region, sex) |> 
         PHEindicatormethods::calculate_dsr(
                 x = cases, # field containing count of events
                 n = py, # field containing population denominators
@@ -100,9 +103,12 @@ swiss_can |>
         mutate(crude_rate = total_count/total_pop*100000) |> 
         relocate(crude_rate, .before = value) |> 
         rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
-        mutate(across(c(crude_rate:upper_CI), ~ sprintf("%.2f", .x))) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2))) |> 
         DT::datatable(
                 filter = "top",
+                options = list(
+                        pageLength = 13
+                ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'
         )
@@ -125,9 +131,8 @@ swiss_can |>
         group_by(cancer_label, id_region, age_WSP) |> 
         summarise(crude_rate = cases/py*100000, across()) |> 
         select(cancer_label:crude_rate, cases, py, period) |> 
-        mutate(crude_rate = sprintf("%.2f", crude_rate)) |> 
+        mutate(crude_rate = round(crude_rate, 2)) |> 
         # Format it as a table
-        mutate(py = format(py, big.mark = ",", scientific = F)) |> 
         DT::datatable(
                 filter = "top",
                 options = list(
@@ -154,9 +159,8 @@ swiss_can |>
         group_by(cancer_label, id_region, age_WSP) |> 
         summarise(crude_rate = cases/py*100000, across()) |> 
         select(cancer_label:crude_rate, cases, py, period) |> 
-        mutate(crude_rate = sprintf("%.2f", crude_rate)) |> 
+        mutate(crude_rate = round(crude_rate, 2)) |> 
         # Format it as a table
-        mutate(py = format(py, big.mark = ",", scientific = F)) |> 
         DT::datatable(
                 filter = "top",
                 options = list(
@@ -167,4 +171,106 @@ swiss_can |>
         )
 ```
 
-## Standard Mortality Ratios
+### Standard Mortality Ratios
+
+
+## CI5 I-XII: Geneva (annual trends)
+
+### Using European Standard Population
+```{r}
+#| warning: false
+#| fig-width: 10
+#| fig-height: 10
+
+# Prep data
+annual_trends_ESP <- swiss_plus |> 
+        filter(!cancer_label %in% c("All cancers excluding non-melanoma skin")) |> 
+        # filter(cancer_label %in% c(
+        #         "Prostate", "Lung (incl. trachea)",
+        #         "Bladder", "Melanoma of skin", "Colon", 
+        #         "Rectum and anus", "Breast", "Corpus uteri", 
+        #         "Pancreas", "Ovary")
+        # ) |> 
+        filter(id_region %in% c("Geneva")) |>
+        # Add grouping variables of interest
+        group_by(year, cancer_label, id_region, sex) |> 
+        PHEindicatormethods::calculate_dsr(
+                x = cases, # field containing count of events
+                n = py, # field containing population denominators
+                stdpop = EuropeanStandardPopulation, # field containing standard populations
+                type = "standard"
+        ) |> 
+        mutate(crude_rate = total_count/total_pop*100000) |> 
+        relocate(crude_rate, .before = value) |> 
+        rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2))) |> 
+        ungroup()
+
+# Plot
+annual_trends_ESP |> 
+        # mutate(sex = as.character(sex)) |> 
+        mutate(year = ymd(paste0(year, "-01-01"))) |> 
+        ggplot(aes(x = year, y = ASR, color = sex, fill = sex))+
+        geom_ribbon(
+                aes(ymin = lower_CI, ymax = upper_CI), 
+                color = NA,
+                alpha =0.2)+
+        geom_line()+
+        facet_wrap(.~cancer_label, labeller = label_wrap_gen())+
+        theme_bw()+
+        theme(
+                legend.position = "top",
+                axis.text.x = element_text(
+                        angle = 40, vjust = 0.5
+                        # , size = 12
+                ))
+```
+
+### Using World Standard Population
+```{r}
+#| warning: false
+#| fig-width: 10
+#| fig-height: 10
+# Prep data
+annual_trends_WSP <- swiss_plus |> 
+        filter(!cancer_label %in% c("All cancers excluding non-melanoma skin")) |> 
+        # filter(cancer_label %in% c(
+        #         "Prostate", "Lung (incl. trachea)",
+        #         "Bladder", "Melanoma of skin", "Colon", 
+        #         "Rectum and anus", "Breast", "Corpus uteri", 
+        #         "Pancreas", "Ovary")
+        # ) |> 
+        filter(id_region %in% c("Geneva")) |>
+        # Add grouping variables of interest
+        group_by(year, cancer_label, id_region, sex) |> 
+        PHEindicatormethods::calculate_dsr(
+                x = cases, # field containing count of events
+                n = py, # field containing population denominators
+                stdpop = WorldStandardPopulation, # field containing standard populations
+                type = "standard"
+        ) |> 
+        mutate(crude_rate = total_count/total_pop*100000) |> 
+        relocate(crude_rate, .before = value) |> 
+        rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2))) |> 
+        ungroup()
+
+# Plot
+annual_trends_WSP |> 
+        mutate(year = ymd(paste0(year, "-01-01"))) |> 
+        ggplot(aes(x = year, y = ASR, fill = sex, color = sex))+
+        geom_ribbon(
+                aes(ymin = lower_CI, ymax = upper_CI), 
+                color = NA,
+                alpha =0.2
+        )+
+        geom_line()+
+        facet_wrap(.~cancer_label, labeller = label_wrap_gen())+
+        theme_bw()+
+        theme(
+                legend.position = "top",
+                axis.text.x = element_text(
+                        angle = 40, vjust = 0.5
+                        # , size = 12
+                ))
+```
