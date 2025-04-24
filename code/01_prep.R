@@ -6,23 +6,25 @@ pacman::p_load(
 )
 
 
-# Data prep ---------------------------------------------------------------
-
-## External data -----------------------------------------------------------
-
-### Load Standard Populations ####
+# Load Standard Populations ####
 # Downloaded from https://www.opendata.nhs.scot/dataset/standard-populations
 
-#### European Standard Population ####
+## European Standard Population ####
 ESP <- read_csv(here("data", "european_standard_population.csv"))
 ESP_sex <- read_csv(here("data", "european_standard_population_by_sex.csv")) |> 
-        mutate(AgeGroup = factor(AgeGroup, levels = ESP$AgeGroup))
-#### World Standard Population ####
+        mutate(
+                AgeGroup = factor(AgeGroup, levels = ESP$AgeGroup),
+                Sex = factor(Sex)
+        )
+## World Standard Population ####
 WSP <- read_csv(here("data", "world_standard_population.csv"))
 WSP_sex <- read_csv(here("data", "world_standard_population_by_sex.csv")) |> 
-        mutate(AgeGroup = factor(AgeGroup, levels = WSP$AgeGroup))
+        mutate(
+                AgeGroup = factor(AgeGroup, levels = WSP$AgeGroup),
+                Sex = factor(Sex)
+        )
 
-### Load cancer registry dataset ####
+# Load cancer registry dataset ####
 # From files downloaded from https://ci5.iarc.fr/ci5-xii/download
 # CI5-XII summary database
 # For comparison with analysis results, check summary tables at:
@@ -34,7 +36,7 @@ cancer_summary <- read_tsv(here("data", "CI5-XII summary database", "cancer_summ
 Registry <- read_fwf(here("data", "CI5-XII summary database", "Registry.txt"))
 colnames(Registry) <- c("RegistryCode", "RegistryName", "YearRange")
 
-##### Create complete dataset ####
+## Create complete dataset ####
 # Age group columns to numeric identity
 colnames(cases)[5:23] <- as.character(1:19)
 colnames(pop)[4:22] <- as.character(1:19)
@@ -49,8 +51,8 @@ cases_long <- cases |>
 
 # Combine all into one
 CI5XII_data <- 
-        left_join(cases_long, 
-                  pop_long, 
+        cases_long |> 
+        left_join(pop_long, 
                   by = c("REGISTRY", "SEX", "age")) |> 
         left_join(cancer_summary, join_by(CANCER == CANCER)) |> 
         left_join(Registry, join_by(REGISTRY == RegistryCode)) |> 
@@ -76,7 +78,7 @@ CI5XII_data <-
         # Join with the ESP_sex data
         left_join(ESP_sex, by = join_by(age_ESP == AgeGroup, sex == Sex)) |>
         # Join with the WSP_sex data
-        left_join(WSP_sex, by = join_by(age_WSP == AgeGroup, sex == Sex), keep = FALSE) |>
+        left_join(WSP_sex, by = join_by(age_WSP == AgeGroup, sex == Sex)) |>
         # Remove rows of 90plus years (no "py" observed)
         filter(age_ESP != "90plus years")
 
@@ -84,4 +86,48 @@ CI5XII_data <-
 swiss_can <- 
         CI5XII_data |> 
         # Filter for Switzerland
-        filter(str_detect(id_label, "Switzerland"))
+        filter(str_detect(id_label, "Switzerland")) |> 
+        droplevels()
+
+# Load annual registry data ####
+# Downloaded from https://ci5.iarc.fr/ci5plus/download
+# I converted data.csv to data.rds in order to save space
+annual_cases <- readRDS(here("data", "CI5plus_Summary", "data.rds"))
+id_dict <- read_csv(here("data", "CI5plus_Summary", "id_dict.csv"))
+cancer_dict <- read_csv(here("data", "CI5plus_Summary", "cancer_dict.csv"))
+
+## Create complete dataset ####
+CI5plus_data <- 
+        annual_cases |> 
+        left_join(cancer_dict, join_by(cancer_code == cancer_code)) |> 
+        left_join(id_dict, join_by(id_code == id_code)) |> 
+        mutate(
+                id_label = trimws(str_remove(id_label, "[*]")),
+                # get country and region
+                id_country = factor(str_split_i(id_label, ", ", 1)),
+                id_region = factor(str_split_i(id_label, ", ", 2)),
+                # Convert cancer_label to factor
+                cancer_label = factor(cancer_label),
+                # label sex
+                sex = factor(sex, levels=c(1,2), labels = c("Male", "Female")),
+                # label age group
+                age_ESP = factor(age, levels = c(1:19), labels = ESP$AgeGroup),
+                age_WSP = fct_recode(age_ESP, "85plus years" = "85-89 years")
+        ) |> 
+        # Join with the ESP_sex data
+        left_join(ESP_sex, by = join_by(age_ESP == AgeGroup, sex == Sex)) |>
+        # Join with the WSP_sex data
+        left_join(WSP_sex, by = join_by(age_WSP == AgeGroup, sex == Sex)) |>
+        # Remove rows of 90plus years (no "py" observed)
+        filter(age_ESP != "90plus years")
+
+## Create Swiss dataset for this analysis ----------------------------------
+swiss_plus <- 
+        CI5plus_data |> 
+        # Filter for Switzerland
+        filter(str_detect(id_label, "Switzerland")) |> 
+        droplevels()
+
+# Save the generated datasets ####
+saveRDS(swiss_can, here("data", "swiss_can.rds"))
+saveRDS(swiss_plus, here("data", "swiss_plus.rds"))
