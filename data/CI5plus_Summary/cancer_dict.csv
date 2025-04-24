@@ -1,0 +1,30 @@
+cancer_code,cancer_label,icd10,short_label
+1,All cancers excluding non-melanoma skin,C00-96/C44,All cancers excl. C44
+2,Lip oral cavity and pharynx,C00-14,Lip oral cavity and pharynx
+3,Oesophagus,C15,Oesophagus
+4,Stomach,C16,Stomach
+5,Colon,C18,Colon
+6,Rectum and anus,C19-21,Rectum and anus
+7,Liver and intrahepatic bile ducts,C22,Liver
+8,Gallbladder and extrahepatic ducts,C23-24,Gallbladder
+9,Pancreas,C25,Pancreas
+10,Larynx,C32,Larynx
+11,Lung (incl. trachea),C33-34,Lung
+12,Bone,C40-41,Bone
+13,Melanoma of skin,C43,Melanoma of skin
+14,Connective and soft tissue,C47+C49,Connective and soft tissue
+15,Breast,C50,Breast
+16,Cervix uteri,C53,Cervix uteri
+17,Corpus uteri,C54,Corpus uteri
+18,Ovary,C56,Ovary
+19,Prostate,C61,Prostate
+20,Testis,C62,Testis
+21,Kidney and renal pelvis,C64-65,Kidney
+22,Bladder,C67,Bladder
+23,Eye,C69,Eye
+24,"Brain, central nervous system",C70-72,"Brain, CNS"
+25,Thyroid,C73,Thyroid
+26,Hodgkin lymphoma,C81,Hodgkin lymphoma
+27,Non-Hodgkin lymphoma,"C82-86,C96",NHL
+28,Multiple myeloma and immunoproliferative diseases,C88+C90,Multiple myeloma
+29,Leukaemia,C91-95,Leukaemia

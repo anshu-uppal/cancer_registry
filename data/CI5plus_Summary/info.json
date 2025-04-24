@@ -1,0 +1,14 @@
+{
+  "description": "CI5 plus summary database. registry data by cancer, year and age-group(1 = 0-4, 2 = 4-9, ... 18 = 85+, 19 = missing age)",
+  "date": "2024-10-03",
+  "database": {
+    "name": "CI5 plus summary",
+    "version": "2024 1.1",
+    "web": "https://ci5.iarc.fr/ci5plus/"
+  },
+  "file description": {
+    "data.csv": "number of cases and population year",
+    "cancer_dict.csv": "cancer dictionnary",
+    "id_dict.csv": "registry dictionnary"
+  }
+}
