@@ -1,0 +1,160 @@
+---
+title: "R coding to calculate standardised rates and ratios from cancer registry data"
+author: "Anshu Uppal"
+date: last-modified
+format:
+        html:
+                code-fold: true
+                toc: true
+                toc-location: left  # Place TOC on the left side
+                toc-depth: 5        # Include headers up to level 3 (###)
+                toc-title: "On this page" # Custom title for the TOC
+                smooth-scroll: true # Enable smooth scrolling
+reference-location: margin
+citation-location: margin
+---
+
+```{r}
+#| context: setup
+#| message: false
+#| code-fold: false
+# install.packages("pacman")
+pacman::p_load(
+        here,
+        tidyverse,
+        # Rcan, # package for Cancer Registry Data Analysis and Visualisation
+        PHEindicatormethods, # package for standardising rates
+        DT # package for table formatting and styling
+)
+
+source(here("code", "01_prep.R"))
+```
+
+```{css}
+/* set DT table fontsizes */
+th { font-size: 11px; } /* header font */
+td { font-size: 11px; } /* cell font */
+```
+
+## Directly standardised rates
+This section uses data from Volume XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: https://ci5.iarc.fr/ci5-xii/download. The full dataset was then restricted to data from Switzerland-based cancer registries only.
+
+Standard Populations were downloaded from https://www.opendata.nhs.scot/dataset/standard-populations
+
+::: callout-note
+When using the `calculate_dsr()` function from the `PHEindicatormethods` package, when the cases within the strata are less than 10 the DSR is suppressed ("When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output").
+:::
+### Using European Standard Population
+#### By sex
+```{r}
+# "When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output." (from the `PHEindicatormethods::calculate_dsr()` funtion)
+
+## European Standard Population
+swiss_can |> 
+        # filter(
+        #         cancer_label %in% c("Colon")
+        #         , id_region %in% c("Geneva", "Vaud")
+        # ) |> 
+        # Add grouping variables of interest
+        group_by(cancer_label, id_region, sex) |> 
+        PHEindicatormethods::calculate_dsr(
+                x = cases, # field containing count of events
+                n = py, # field containing population denominators
+                stdpop = EuropeanStandardPopulation, # field containing standard populations
+                type = "standard"
+        ) |> 
+        mutate(crude_rate = total_count/total_pop*100000) |> 
+        relocate(crude_rate, .before = value) |> 
+        rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ sprintf("%.2f", .x))) |> 
+        DT::datatable(
+                filter = "top",
+                rownames = FALSE, # set to FALSE for cleaner look
+                class = 'cell-border stripe hover nowrap compact'
+        )
+```
+
+### Using World Standard Population
+
+#### By sex
+```{r}
+swiss_can |> 
+        # filter(
+        #         cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
+        #         id_region %in% c("Geneva")
+        # ) |> 
+        group_by(cancer_label, id_region, sex) |> 
+        PHEindicatormethods::calculate_dsr(
+                x = cases, # field containing count of events
+                n = py, # field containing population denominators
+                stdpop = WorldStandardPopulation, # field containing standard populations
+                type = "standard"
+        )|> 
+        mutate(crude_rate = total_count/total_pop*100000) |> 
+        relocate(crude_rate, .before = value) |> 
+        rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ sprintf("%.2f", .x))) |> 
+        DT::datatable(
+                filter = "top",
+                rownames = FALSE, # set to FALSE for cleaner look
+                class = 'cell-border stripe hover nowrap compact'
+        )
+```
+
+#### By age (crude rates only)
+##### Sex: Male
+```{r}
+#| message: false
+#| warning: false
+## World Standard Population
+swiss_can |> 
+        filter(
+                # cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
+                # id_region %in% c("Geneva"),
+                sex == "Male"
+        ) |> 
+        group_by(cancer_label, id_region, age_WSP) |> 
+        summarise(crude_rate = cases/py*100000, across()) |> 
+        select(cancer_label:crude_rate, cases, py, period) |> 
+        mutate(crude_rate = sprintf("%.2f", crude_rate)) |> 
+        # Format it as a table
+        mutate(py = format(py, big.mark = ",", scientific = F)) |> 
+        DT::datatable(
+                filter = "top",
+                options = list(
+                        pageLength = 18 
+                ),
+                rownames = FALSE, # set to FALSE for cleaner look
+                class = 'cell-border stripe hover nowrap compact'
+        )
+```
+
+##### Sex: Female
+```{r}
+#| message: false
+#| warning: false
+## World Standard Population
+swiss_can |> 
+        filter(
+                # cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
+                # id_region %in% c("Geneva"),
+                sex == "Female"
+        ) |> 
+        group_by(cancer_label, id_region, age_WSP) |> 
+        group_by(cancer_label, id_region, age_WSP) |> 
+        summarise(crude_rate = cases/py*100000, across()) |> 
+        select(cancer_label:crude_rate, cases, py, period) |> 
+        mutate(crude_rate = sprintf("%.2f", crude_rate)) |> 
+        # Format it as a table
+        mutate(py = format(py, big.mark = ",", scientific = F)) |> 
+        DT::datatable(
+                filter = "top",
+                options = list(
+                        pageLength = 18 
+                ),
+                rownames = FALSE, # set to FALSE for cleaner look
+                class = 'cell-border stripe hover nowrap compact'
+        )
+```
+
+## Standard Mortality Ratios
