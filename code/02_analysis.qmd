@@ -10,6 +10,7 @@ format:
                 toc-depth: 5        # Include headers up to level 3 (###)
                 toc-title: "On this page" # Custom title for the TOC
                 smooth-scroll: true # Enable smooth scrolling
+                embed-resources: true # Make the html file self contained
 reference-location: margin
 citation-location: margin
 ---
@@ -37,15 +38,20 @@ td { font-size: 11px; } /* cell font */
 ```
 
 ## Directly standardised rates
-This section uses data from Volume XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: https://ci5.iarc.fr/ci5-xii/download. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
-Standard Populations were downloaded from https://www.opendata.nhs.scot/dataset/standard-populations
+This section uses data from Volume XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5-xii/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
+
+World and European Standard Populations were downloaded from:
+<https://www.opendata.nhs.scot/dataset/standard-populations>
 
 ::: callout-note
 When using the `calculate_dsr()` function from the `PHEindicatormethods` package, when the cases within the strata are less than 10 the DSR is suppressed ("When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output").
 :::
+
 ### Using European Standard Population
+
 #### By sex
+
 ```{r}
 # "When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output." (from the `PHEindicatormethods::calculate_dsr()` funtion)
 
@@ -77,6 +83,7 @@ swiss_can |>
 ### Using World Standard Population
 
 #### By sex
+
 ```{r}
 swiss_can |> 
         # filter(
@@ -102,7 +109,9 @@ swiss_can |>
 ```
 
 #### By age (crude rates only)
+
 ##### Sex: Male
+
 ```{r}
 #| message: false
 #| warning: false
@@ -130,6 +139,7 @@ swiss_can |>
 ```
 
 ##### Sex: Female
+
 ```{r}
 #| message: false
 #| warning: false
