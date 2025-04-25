@@ -54,4 +54,4 @@ rsconnect/
 *_files/
 
 # Allow versioning
-!02_analysis.html
+!index.html
