@@ -139,6 +139,7 @@ canton_boundaries <- sf::st_read(
                    "swissBOUNDARIES3D_1_5_TLM_KANTONSGEBIET.shp")) |> 
         st_zm() |> # Remove the Z coordinates
         st_transform(2056) |>
+        st_as_sf() |> 
         select(NAME) |> 
         # New column to conform to registry names and groupings
         mutate(id_region = case_when(

@@ -25,6 +25,7 @@ pacman::p_load(
         tidyverse,
         # Rcan, # package for Cancer Registry Data Analysis and Visualisation
         PHEindicatormethods, # package for standardising rates
+        epitools,
         DT # package for table formatting and styling
 )
 
@@ -33,6 +34,8 @@ pacman::p_load(
 swiss_can <- readRDS(here("data", "swiss_can.rds"))
 # Annual data, from CI5-I to CI5-XII
 swiss_plus <- readRDS(here("data", "swiss_plus.rds"))
+# Canton polygons data
+canton_boundaries <- readRDS(here("data", "canton_boundaries.rds"))
 
 ```
 
