@@ -2,7 +2,8 @@
 pacman::p_load(
         here,
         tidyverse,
-        PHEindicatormethods # package for standardising rates
+        PHEindicatormethods, # package for standardising rates
+        sf  # for spatial functions
 )
 
 
@@ -128,6 +129,38 @@ swiss_plus <-
         filter(str_detect(id_label, "Switzerland")) |> 
         droplevels()
 
+
+# Geocode Swiss cantons ####
+# Downloaded from:
+# https://www.swisstopo.admin.ch/de/landschaftsmodell-swissboundaries3d
+canton_boundaries <- sf::st_read(
+        here::here("data", 
+                   "swissboundaries3d_2025-04_2056_5728.shp",
+                   "swissBOUNDARIES3D_1_5_TLM_KANTONSGEBIET.shp")) |> 
+        st_zm() |> # Remove the Z coordinates
+        st_transform(2056) |>
+        select(NAME) |> 
+        # New column to conform to registry names and groupings
+        mutate(id_region = case_when(
+                NAME == "Genève" ~ "Geneva",
+                NAME == "Luzern" ~ "Lucerne",
+                NAME == "Vaud" ~ "Vaud",
+                NAME == "Valais" ~ "Valais",
+                NAME == "Ticino" ~ "Ticino",
+                NAME == "Fribourg" ~ "Fribourg",
+                NAME == "Aargau" ~ "Aargau",
+                NAME %in% c("Basel-Landschaft", "Basel-Stadt") ~ "Basel",
+                NAME %in% c("Graubünden", "Glarus") ~ "Graubünden and Glarus",
+                NAME %in% c("Bern", "Solothurn") ~ "Berne Solothurn",
+                NAME %in% c("Neuchâtel", "Jura") ~ "Neuchâtel and Jura",
+                NAME %in% c("Zürich", "Zug") ~ "Zurich and Zug",
+                .default = "East"
+        )) |> 
+        # combine the polygons for the grouped cantons
+        group_by(id_region) |> 
+        summarise() 
+
 # Save the generated datasets ####
 saveRDS(swiss_can, here("data", "swiss_can.rds"))
 saveRDS(swiss_plus, here("data", "swiss_plus.rds"))
+saveRDS(canton_boundaries, here("data", "canton_boundaries.rds"))
