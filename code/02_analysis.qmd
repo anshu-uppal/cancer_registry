@@ -10,7 +10,7 @@ format:
                 toc-depth: 5        # Include headers up to level 3 (###)
                 toc-title: "On this page" # Custom title for the TOC
                 smooth-scroll: true # Enable smooth scrolling
-                # embed-resources: true # Make the html file self contained
+                embed-resources: true # Make the html file self contained
 reference-location: margin
 citation-location: margin
 ---
