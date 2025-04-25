@@ -25,18 +25,16 @@ pacman::p_load(
         tidyverse,
         # Rcan, # package for Cancer Registry Data Analysis and Visualisation
         PHEindicatormethods, # package for standardising rates
-        epitools,
         DT # package for table formatting and styling
 )
 
 # source(here("code", "01_prep.R"))
 # Most recent data, from CI5-XII
-swiss_can <- readRDS(here("data", "swiss_can.rds"))
+swiss_XII <- readRDS(here("data", "swiss_XII.rds"))
 # Annual data, from CI5-I to CI5-XII
 swiss_plus <- readRDS(here("data", "swiss_plus.rds"))
 # Canton polygons data
 canton_boundaries <- readRDS(here("data", "canton_boundaries.rds"))
-
 ```
 
 ```{css}
@@ -63,7 +61,7 @@ When using the `calculate_dsr()` function from the `PHEindicatormethods` package
 # "When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output." (from the `PHEindicatormethods::calculate_dsr()` funtion)
 
 ## European Standard Population
-swiss_can |> 
+swiss_XII |> 
         # filter(
         #         cancer_label %in% c("Colon")
         #         , id_region %in% c("Geneva", "Vaud")
@@ -83,7 +81,7 @@ swiss_can |>
         DT::datatable(
                 filter = "top",
                 options = list(
-                        pageLength = 13 
+                        pageLength = 24 
                 ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'
@@ -93,7 +91,7 @@ swiss_can |>
 #### Using World Standard Population
 
 ```{r}
-swiss_can |> 
+swiss_XII |> 
         # filter(
         #         cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
         #         id_region %in% c("Geneva")
@@ -112,7 +110,7 @@ swiss_can |>
         DT::datatable(
                 filter = "top",
                 options = list(
-                        pageLength = 13
+                        pageLength = 24
                 ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'
@@ -127,7 +125,7 @@ swiss_can |>
 #| message: false
 #| warning: false
 ## World Standard Population
-swiss_can |> 
+swiss_XII |> 
         filter(
                 # cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
                 # id_region %in% c("Geneva"),
@@ -154,13 +152,12 @@ swiss_can |>
 #| message: false
 #| warning: false
 ## World Standard Population
-swiss_can |> 
+swiss_XII |> 
         filter(
                 # cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
                 # id_region %in% c("Geneva"),
                 sex == "Female"
         ) |> 
-        group_by(cancer_label, id_region, age_WSP) |> 
         group_by(cancer_label, id_region, age_WSP) |> 
         summarise(crude_rate = cases/py*100000, across()) |> 
         select(cancer_label:crude_rate, cases, py, period) |> 
@@ -176,7 +173,133 @@ swiss_can |>
         )
 ```
 
-### Standard Mortality Ratios
+### Indirect standardisation
+I first aggregated the data to the level of the whole of Switzerland, per cancer type and summing the cases and person-years by age and sex. This reference population was then used to calculate indirectly standardised rates and ratios for each canton for each cancer type, by sex.
+```{r}
+# Make "reference" population for Switzerland with total cases and person-years
+# per cancer type and by age and sex
+swiss_ref_XII <- 
+        swiss_XII |> 
+        group_by(id_country, cancer_label, sex, age_ESP) |> 
+        reframe(cases_ref = sum(cases), py_ref = sum(py)) |> 
+        ungroup() |> 
+        right_join(swiss_XII, join_by(id_country, cancer_label, sex, age_ESP))
+```
+
+#### Indirectly standardised rates
+```{r}
+ind.rate <-
+        swiss_ref_XII |> 
+        group_by(cancer_label, sex, id_region) |> 
+        PHEindicatormethods::calculate_ISRate(
+                x = cases,
+                n = py,
+                x_ref = cases_ref,
+                n_ref = py_ref,
+                refpoptype = "field"
+        ) |> 
+        rename(ISRate = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(expected:upper_CI), ~ round(.x, 2)))
+
+# Generate the table
+ind.rate |> 
+        select(-c(confidence:method)) |> 
+        DT::datatable(
+                caption = "Indirectly standardised rate per 100,000, with 95% CI",
+                filter = "top",
+                options = list(
+                        pageLength = 13 
+                ),
+                rownames = FALSE, # set to FALSE for cleaner look
+                class = 'cell-border stripe hover nowrap compact'
+        )
+```
+
+#### Indirectly standardised ratios
+```{r}
+ind.ratio <-
+        swiss_ref_XII |> 
+        group_by(cancer_label, sex, id_region) |> 
+        PHEindicatormethods::calculate_ISRatio(
+                x = cases,
+                n = py,
+                x_ref = cases_ref,
+                n_ref = py_ref,
+                refpoptype = "field"
+        ) |> 
+        rename(ISRatio = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(expected:upper_CI), ~ round(.x, 2)))
+
+# Generate the table
+ind.ratio |> 
+        select(-c(confidence:method)) |> 
+        DT::datatable(
+                caption = "indirectly standardised ratio x 1, with 95% CI",
+                filter = "top",
+                options = list(
+                        pageLength = 13 
+                ),
+                rownames = FALSE, # set to FALSE for cleaner look
+                class = 'cell-border stripe hover nowrap compact'
+        )
+```
+
+##### Forest plot of ratios
+(for a select few cancer types)
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 10
+ind.ratio |> 
+        filter(cancer_label %in% 
+                       c("All sites", "Colon", "Rectum", 
+                         "Bladder", "Prostate", "Breast",
+                         "Bone", "Vulva", "Lung (incl. trachea and bronchus)"
+                       )) |>
+        mutate(est_ci_label = sprintf("%.2f [%.2f-%.2f]", 
+                                      ISRatio, lower_CI, upper_CI)
+        ) |> 
+        # arrange(id_region, sex) |> 
+        # Start the plot
+        ggplot(aes(x = ISRatio, y = id_region, color = sex))+
+        # Add CI
+        geom_errorbarh(aes(xmin = lower_CI, xmax = upper_CI), 
+                       height = 0.4, 
+                       linewidth = 0.5,
+                       position = position_dodge(width = 0.5)
+        )+
+        # Add point estimate
+        geom_point(size = 1.5, 
+                   position = position_dodge(width = 0.5))+
+        # Add vertical reference line at ISRatio = 1
+        geom_vline(xintercept = 1, linetype = "dashed", color = "grey50")+
+        # Separate plots by cancer type
+        facet_wrap(~ cancer_label, 
+                   labeller = label_wrap_gen(),
+                   ncol = 3
+                   # scales = "free_x" # Use free_y so regions aren't duplicated across facets
+        )+
+        # Add labels and title
+        labs(
+                title = "Indirectly Standardized Ratio by Canton and Sex", 
+                subtitle = "(reference: national data for Switzerland)",
+                x = "IS Ratio (95% CI)",
+                y = NULL,
+                color = NULL # Legend title
+        ) +
+        # Use a clean theme
+        theme_bw(base_size = 12) +
+        theme(
+                panel.grid.major.x = element_blank(),
+                panel.grid.minor.x = element_blank(),
+                # strip.text = element_text(face = "bold"), # Make facet titles bold
+                axis.text.y = element_text(size = 12),    # Adjust y-axis text size if needed
+                # panel.spacing.y = unit(1, "lines"),      # Add space between facets
+                legend.position = "top"                  # Position legend
+        )
+
+```
 
 
 ## CI5 I-XII: Geneva (annual trends)
