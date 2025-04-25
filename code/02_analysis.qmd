@@ -30,11 +30,11 @@ pacman::p_load(
 
 # source(here("code", "01_prep.R"))
 # Most recent data, from CI5-XII
-swiss_XII <- readRDS(here("data", "swiss_XII.rds"))
+swiss_XII <- readRDS(here("data", "generated_data", "swiss_XII.rds"))
 # Annual data, from CI5-I to CI5-XII
-swiss_plus <- readRDS(here("data", "swiss_plus.rds"))
+swiss_plus <- readRDS(here("data", "generated_data", "swiss_plus.rds"))
 # Canton polygons data
-canton_boundaries <- readRDS(here("data", "canton_boundaries.rds"))
+canton_boundaries <- readRDS(here("data", "generated_data", "canton_boundaries.rds"))
 ```
 
 ```{css}

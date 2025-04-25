@@ -162,6 +162,6 @@ canton_boundaries <- sf::st_read(
         summarise() 
 
 # Save the generated datasets ####
-saveRDS(swiss_XII, here("data", "swiss_XII.rds"))
-saveRDS(swiss_plus, here("data", "swiss_plus.rds"))
-saveRDS(canton_boundaries, here("data", "canton_boundaries.rds"))
+saveRDS(swiss_XII, here("data", "generated_data", "swiss_XII.rds"))
+saveRDS(swiss_plus, here("data", "generated_data", "swiss_plus.rds"))
+saveRDS(canton_boundaries, here("data", "generated_data", "canton_boundaries.rds"))
