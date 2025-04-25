@@ -84,7 +84,7 @@ CI5XII_data <-
         filter(age_ESP != "90plus years")
 
 ## Create Swiss dataset for this analysis ----------------------------------
-swiss_can <- 
+swiss_XII <- 
         CI5XII_data |> 
         # Filter for Switzerland
         filter(str_detect(id_label, "Switzerland")) |> 
@@ -162,6 +162,6 @@ canton_boundaries <- sf::st_read(
         summarise() 
 
 # Save the generated datasets ####
-saveRDS(swiss_can, here("data", "swiss_can.rds"))
+saveRDS(swiss_XII, here("data", "swiss_XII.rds"))
 saveRDS(swiss_plus, here("data", "swiss_plus.rds"))
 saveRDS(canton_boundaries, here("data", "canton_boundaries.rds"))
