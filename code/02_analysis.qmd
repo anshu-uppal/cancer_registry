@@ -29,7 +29,9 @@ pacman::p_load(
 )
 
 # source(here("code", "01_prep.R"))
+# Most recent data, from CI5-XII
 swiss_can <- readRDS(here("data", "swiss_can.rds"))
+# Annual data, from CI5-I to CI5-XII
 swiss_plus <- readRDS(here("data", "swiss_plus.rds"))
 
 ```
@@ -175,6 +177,7 @@ swiss_can |>
 
 
 ## CI5 I-XII: Geneva (annual trends)
+This section uses annual data from Volumes I to XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5plus/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
 ### Using European Standard Population
 ```{r}
