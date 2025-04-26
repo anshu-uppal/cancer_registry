@@ -45,10 +45,10 @@ td { font-size: 11px; } /* cell font */
 ## CI5 XII (2013-2017)
 This section uses data from Volume XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5-xii/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
-The data pre-processing steps can be found in the `01_prep.R` file on the [GitHub repository](https://github.com/anshu-uppal/cancer_registry) for this page.
-
 World and European Standard Populations were downloaded from:
 <https://www.opendata.nhs.scot/dataset/standard-populations>
+
+The **data pre-processing code** can be found in the `01_prep.R` file on the [GitHub repository](https://github.com/anshu-uppal/cancer_registry) for this page.
 
 ### Direct standardisation for age-standardised rates
 ::: callout-note
