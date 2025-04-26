@@ -25,7 +25,7 @@ WSP_sex <- read_csv(here("data", "world_standard_population_by_sex.csv")) |>
                 Sex = factor(Sex)
         )
 
-# Load cancer registry dataset ####
+# Load CI5 XII cancer registry dataset ####
 # From files downloaded from https://ci5.iarc.fr/ci5-xii/download
 # CI5-XII summary database
 # For comparison with analysis results, check summary tables at:
@@ -45,10 +45,14 @@ colnames(pop)[4:22] <- as.character(1:19)
 # Pivot the population and cases data to long format
 pop_long <- pop |> 
         select(-AGE_GROUP) |> 
-        pivot_longer(cols = as.character(1:19), names_to = "age", values_to = "py")
+        pivot_longer(cols = as.character(1:19), 
+                     names_to = "age", 
+                     values_to = "py")
 cases_long <- cases |> 
         select(-TOTAL) |> 
-        pivot_longer(cols = as.character(1:19), names_to = "age", values_to = "cases")
+        pivot_longer(cols = as.character(1:19), 
+                     names_to = "age", 
+                     values_to = "cases")
 
 # Combine all into one
 CI5XII_data <- 
@@ -90,9 +94,9 @@ swiss_XII <-
         filter(str_detect(id_label, "Switzerland")) |> 
         droplevels()
 
-# Load annual registry data ####
+# Load CI5 Plus annual registry data ####
 # Downloaded from https://ci5.iarc.fr/ci5plus/download
-# I converted data.csv to data.rds in order to save space
+# I converted data.csv to data.rds to save space
 annual_cases <- readRDS(here("data", "CI5plus_Summary", "data.rds"))
 id_dict <- read_csv(here("data", "CI5plus_Summary", "id_dict.csv"))
 cancer_dict <- read_csv(here("data", "CI5plus_Summary", "cancer_dict.csv"))
