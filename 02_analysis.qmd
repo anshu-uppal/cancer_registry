@@ -48,7 +48,7 @@ This section uses data from Volume XII of the IARC's "Cancer Incidence in Five C
 World and European Standard Populations were downloaded from:
 <https://www.opendata.nhs.scot/dataset/standard-populations>
 
-### Directly standardised rates
+### Direct standardisation for age-standardised rates
 ::: callout-note
 When using the `calculate_dsr()` function from the `PHEindicatormethods` package, when the cases within the strata are less than 10 the DSR is suppressed ("When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output").
 :::
@@ -59,7 +59,7 @@ When using the `calculate_dsr()` function from the `PHEindicatormethods` package
 # "When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output." (from the `PHEindicatormethods::calculate_dsr()` funtion)
 
 ## European Standard Population
-swiss_XII |> 
+dsr_swiss_ESP <- swiss_XII |> 
         # filter(
         #         cancer_label %in% c("Colon")
         #         , id_region %in% c("Geneva", "Vaud")
@@ -74,8 +74,9 @@ swiss_XII |>
         ) |> 
         mutate(crude_rate = total_count/total_pop*100000) |> 
         relocate(crude_rate, .before = value) |> 
-        rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
-        mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2))) |> 
+        rename(cases = total_count, ASRate = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2)))
+dsr_swiss_ESP |> 
         DT::datatable(
                 filter = "top",
                 options = list(
@@ -85,6 +86,53 @@ swiss_XII |>
                 class = 'cell-border stripe hover nowrap compact'
         )
 ```
+
+##### Plots
+```{r}
+#| warning: false
+#| message: false
+dsr_swiss_ESP |> 
+        filter(cancer_label %in% c("All sites", "All sites but skin", "Other skin")) |> 
+        ggplot(aes(x = ASRate, y = id_region, color = sex, fill = sex))+
+        geom_col(position = position_dodge(width = 0.4))+
+        theme_bw()+
+        labs(x = "Age-standardised incidence rate, per 100,000", 
+             y = NULL,
+             color = NULL, fill = NULL)+
+        geom_errorbarh(aes(xmin = lower_CI, xmax = upper_CI),
+                       height = 0.4, 
+                       linewidth = 0.5,
+                       position = position_dodge(width = 0.4))+
+        facet_wrap(.~cancer_label, 
+                   labeller = label_wrap_gen(),
+                   ncol = 5)+
+        theme(legend.position = "top")
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 30
+dsr_swiss_ESP |> 
+        filter(!cancer_label %in% c("All sites", "All sites but skin", "Other skin")) |> 
+        # filter(cancer_label %in% c("Breast", "Colon", "Adrenal gland")) |>
+        ggplot(aes(x = ASRate, y = id_region, color = sex, fill = sex))+
+        geom_col(position = position_dodge(width = 0.4))+
+        theme_bw()+
+        labs(x = "Age-standardised incidence rate, per 100,000", 
+             y = NULL,
+             color = NULL, fill = NULL)+
+        geom_errorbarh(aes(xmin = lower_CI, xmax = upper_CI),
+                       height = 0.4, 
+                       linewidth = 0.5,
+                       position = position_dodge(width = 0.4))+
+        facet_wrap(.~cancer_label, 
+                   labeller = label_wrap_gen(),
+                   ncol = 5)+
+        theme(legend.position = "top")
+```
+
 
 #### Using World Standard Population
 
@@ -103,7 +151,7 @@ swiss_XII |>
         )|> 
         mutate(crude_rate = total_count/total_pop*100000) |> 
         relocate(crude_rate, .before = value) |> 
-        rename(cases = total_count, ASR = value, lower_CI = lowercl, upper_CI = uppercl) |> 
+        rename(cases = total_count, ASRate = value, lower_CI = lowercl, upper_CI = uppercl) |> 
         mutate(across(c(crude_rate:upper_CI), ~ round(.x, 2))) |> 
         DT::datatable(
                 filter = "top",
