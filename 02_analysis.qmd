@@ -42,7 +42,7 @@ th { font-size: 11px; } /* header font */
 td { font-size: 11px; } /* cell font */
 ```
 
-## CI5 XII
+## CI5 XII (2013-2017)
 This section uses data from Volume XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5-xii/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
 World and European Standard Populations were downloaded from:
@@ -116,24 +116,38 @@ swiss_XII |>
 ```
 
 #### By age (crude rates only)
+```{r}
+#| message: false
+#| warning: false
+age_crude <- swiss_XII |> 
+        group_by(cancer_label, id_region, age_ESP, sex) |> 
+        summarise(crude_rate = cases/py*100000, across()) |> 
+        select(cancer_label:crude_rate, cases, py, period) |> 
+        mutate(crude_rate = round(crude_rate, 2))
+```
 
 ##### Sex: Male
+```{r}
+# Format it as a table
+age_crude |>     
+        filter(sex == "Male") |> 
+DT::datatable(
+        filter = "top",
+        options = list(
+                pageLength = 18 
+        ),
+        rownames = FALSE, # set to FALSE for cleaner look
+        class = 'cell-border stripe hover nowrap compact'
+)
+```
+
+##### Sex: Female
 
 ```{r}
 #| message: false
 #| warning: false
-## World Standard Population
-swiss_XII |> 
-        filter(
-                # cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
-                # id_region %in% c("Geneva"),
-                sex == "Male"
-        ) |> 
-        group_by(cancer_label, id_region, age_WSP) |> 
-        summarise(crude_rate = cases/py*100000, across()) |> 
-        select(cancer_label:crude_rate, cases, py, period) |> 
-        mutate(crude_rate = round(crude_rate, 2)) |> 
-        # Format it as a table
+age_crude |>     
+        filter(sex == "Female") |> 
         DT::datatable(
                 filter = "top",
                 options = list(
@@ -144,31 +158,30 @@ swiss_XII |>
         )
 ```
 
-##### Sex: Female
-
+##### Plots for Geneva
 ```{r}
-#| message: false
 #| warning: false
-## World Standard Population
-swiss_XII |> 
-        filter(
-                # cancer_label %in% c("Colon", "Corpus uteri", "Prostate"),
-                # id_region %in% c("Geneva"),
-                sex == "Female"
-        ) |> 
-        group_by(cancer_label, id_region, age_WSP) |> 
-        summarise(crude_rate = cases/py*100000, across()) |> 
-        select(cancer_label:crude_rate, cases, py, period) |> 
-        mutate(crude_rate = round(crude_rate, 2)) |> 
-        # Format it as a table
-        DT::datatable(
-                filter = "top",
-                options = list(
-                        pageLength = 18 
-                ),
-                rownames = FALSE, # set to FALSE for cleaner look
-                class = 'cell-border stripe hover nowrap compact'
-        )
+#| message: false
+#| fig-width: 10
+#| fig-height: 12
+age_crude |> 
+        # Remove the text " years" while keeping the factor structure
+        mutate(age_ESP = fct_relabel(age_ESP, ~ str_remove(.x, " years"))) |> 
+        filter(id_region %in% c("Geneva")) |> 
+        # filter(cancer_label %in% c("All sites", "Colon", "Breast")) |> 
+        ggplot(aes(x=age_ESP, y = crude_rate, color = sex, group = sex))+
+        geom_path()+
+        facet_wrap(.~cancer_label, scales = "free_y",
+                   labeller = label_wrap_gen(),
+                   ncol = 6
+                   )+
+        labs(y = "Crude rate per 100,000", x = "Age group", color = NULL)+
+        theme_bw()+
+        # Show only every third label on x-axis
+        scale_x_discrete(breaks = \(x)x[seq(3, length(x), by = 3)])+
+        theme(axis.text.x = element_text(angle = 50, vjust = 0.8),
+              legend.position = "top")
+
 ```
 
 ### Indirect standardisation
@@ -300,7 +313,7 @@ ind.ratio |>
 ```
 
 
-## CI5 I-XII: Geneva (annual trends)
+## CI5 I-XII: Geneva (annual trends 1973-2017)
 This section uses annual data from Volumes I to XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5plus/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
 ### Using European Standard Population
