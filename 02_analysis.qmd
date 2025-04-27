@@ -24,16 +24,21 @@ pacman::p_load(
         tidyverse,
         # Rcan, # package for Cancer Registry Data Analysis and Visualisation
         PHEindicatormethods, # package for standardising rates
+        # sf, # for spatial functions
         DT # package for table formatting and styling
 )
+
+# Read in the pre-processed data -------------------------------------
 
 # source(here("code", "01_prep.R"))
 # Most recent data, from CI5-XII
 swiss_XII <- readRDS(here("data", "generated_data", "swiss_XII.rds"))
+# National data, from CI5-XII
+swiss_ref_XII <- readRDS(here("data", "generated_data", "swiss_ref_XII.rds"))
 # Annual data, from CI5-I to CI5-XII
 swiss_plus <- readRDS(here("data", "generated_data", "swiss_plus.rds"))
-# Canton polygons data
-canton_boundaries <- readRDS(here("data", "generated_data", "canton_boundaries.rds"))
+# # Canton polygons data
+# canton_boundaries <- readRDS(here("data", "generated_data", "canton_boundaries.rds"))
 ```
 
 ```{css}
@@ -54,6 +59,8 @@ The **data pre-processing code** can be found in the `01_prep.R` file on the [Gi
 ::: callout-note
 When using the `calculate_dsr()` function from the `PHEindicatormethods` package, when the cases within the strata are less than 10 the DSR is suppressed ("When the total count is < 10 DSRs are not reliable and will therefore be suppressed in the output").
 :::
+
+::: {.panel-tabset}
 
 #### Using European Standard Population
 
@@ -82,7 +89,7 @@ dsr_swiss_ESP |>
         DT::datatable(
                 filter = "top",
                 options = list(
-                        pageLength = 24 
+                        pageLength = 26 
                 ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'
@@ -158,12 +165,14 @@ swiss_XII |>
         DT::datatable(
                 filter = "top",
                 options = list(
-                        pageLength = 24
+                        pageLength = 26
                 ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'
         )
 ```
+
+:::
 
 #### By age (crude rates only)
 ```{r}
@@ -235,22 +244,12 @@ age_crude |>
 ```
 
 ### Indirect standardisation
-I first aggregated the data to the level of the whole of Switzerland, per cancer type and summing the cases and person-years by age and sex. This reference population was then used to calculate indirectly standardised rates and ratios for each canton for each cancer type, by sex.
-```{r}
-# Make "reference" population for Switzerland with total cases and person-years
-# per cancer type and by age and sex
-swiss_ref_XII <- 
-        swiss_XII |> 
-        group_by(id_country, cancer_label, sex, age_ESP) |> 
-        reframe(cases_ref = sum(cases), py_ref = sum(py)) |> 
-        ungroup() |> 
-        right_join(swiss_XII, join_by(id_country, cancer_label, sex, age_ESP))
-```
+During the pre-processing, I aggregated the data to the level of the whole of Switzerland, per cancer type and summing the cases and person-years by age and sex. These national reference cases and person-years are then used below to calculate indirectly standardised rates and ratios for each canton for each cancer type, by sex.
 
 #### Indirectly standardised rates
 ```{r}
 ind.rate <-
-        swiss_ref_XII |> 
+        swiss_XII |> 
         group_by(cancer_label, sex, id_region) |> 
         PHEindicatormethods::calculate_ISRate(
                 x = cases,
@@ -269,7 +268,7 @@ ind.rate |>
                 caption = "Indirectly standardised rate per 100,000, with 95% CI",
                 filter = "top",
                 options = list(
-                        pageLength = 13 
+                        pageLength = 14 
                 ),
                 rownames = FALSE, # set to FALSE for cleaner look
                 class = 'cell-border stripe hover nowrap compact'

@@ -94,6 +94,28 @@ swiss_XII <-
         filter(str_detect(id_label, "Switzerland")) |> 
         droplevels()
 
+## Create Swiss national dataset
+swiss_ref_XII <- 
+        swiss_XII |> 
+        group_by(id_country, cancer_label, sex, age_ESP, age_WSP,
+                 EuropeanStandardPopulation, WorldStandardPopulation) |> 
+        reframe(cases_ref = sum(cases), py_ref = sum(py)) |> 
+        ungroup() |> 
+        mutate(id_region = as.factor("National"), period = "2013-2017")
+# Add national data to the full Swiss dataset
+swiss_XII <- 
+        bind_rows(
+                swiss_XII,
+                swiss_ref_XII |> rename(cases = cases_ref, py = py_ref)
+        ) |>
+        mutate(id_region = fct_relevel(id_region, "National")) |> 
+        # Also join the national cases and py for indirect standardisation
+        left_join(
+                swiss_ref_XII |> select(id_country, cancer_label, sex, age_ESP,
+                                        cases_ref, py_ref),
+                join_by(id_country, cancer_label, sex, age_ESP))
+
+
 # Load CI5 Plus annual registry data ####
 # Downloaded from https://ci5.iarc.fr/ci5plus/download
 # I converted data.csv to data.rds to save space
@@ -167,5 +189,6 @@ canton_boundaries <- sf::st_read(
 
 # Save the generated datasets ####
 saveRDS(swiss_XII, here("data", "generated_data", "swiss_XII.rds"))
+saveRDS(swiss_ref_XII, here("data", "generated_data", "swiss_ref_XII.rds"))
 saveRDS(swiss_plus, here("data", "generated_data", "swiss_plus.rds"))
 saveRDS(canton_boundaries, here("data", "generated_data", "canton_boundaries.rds"))
