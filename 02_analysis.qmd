@@ -53,7 +53,7 @@ This section uses data from Volume XII of the IARC's "Cancer Incidence in Five C
 World and European Standard Populations were downloaded from:
 <https://www.opendata.nhs.scot/dataset/standard-populations>
 
-The **data pre-processing code** can be found in the `01_prep.R` file on the [GitHub repository](https://github.com/anshu-uppal/cancer_registry) for this page.
+The **data pre-processing code** can be found in the [`01_prep.R`](https://github.com/anshu-uppal/cancer_registry/blob/main/code/01_prep.R) file on the [GitHub repository](https://github.com/anshu-uppal/cancer_registry) for this page.
 
 ### Direct standardisation for age-standardised rates
 ::: callout-note
@@ -526,7 +526,7 @@ ind.ratio |>
 ## CI5 I-XII: Geneva (annual trends 1973-2017)
 This section uses annual data from Volumes I to XII of the IARC's "Cancer Incidence in Five Continents (CI5)" collaboration: <https://ci5.iarc.fr/ci5plus/download>. The full dataset was then restricted to data from Switzerland-based cancer registries only.
 
-The **data pre-processing code** can be found in the `01_prep.R` file on the [GitHub repository](https://github.com/anshu-uppal/cancer_registry) for this page.
+The **data pre-processing code** can be found in the [`01_prep.R`](https://github.com/anshu-uppal/cancer_registry/blob/main/code/01_prep.R) file on the [GitHub repository](https://github.com/anshu-uppal/cancer_registry) for this page.
 
 **Direct standardisation**, using either the European or the World Standard Populations, was used to calculate age-standardised rates for each year.
 
