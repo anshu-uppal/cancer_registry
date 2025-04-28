@@ -251,7 +251,9 @@ age_crude <- swiss_XII |>
 
 ::: {.panel-tabset}
 
-##### Plots for Geneva
+##### Plots
+::: {.panel-tabset}
+###### Geneva only
 ```{r}
 #| warning: false
 #| message: false
@@ -277,6 +279,32 @@ age_crude |>
 
 ```
 
+###### National
+```{r}
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 12
+age_crude |> 
+        # Remove the text " years" while keeping the factor structure
+        mutate(age_ESP = fct_relabel(age_ESP, ~ str_remove(.x, " years"))) |> 
+        filter(id_region %in% c("National")) |> 
+        # filter(cancer_label %in% c("All sites", "Colon", "Breast")) |>
+        ggplot(aes(x=age_ESP, y = crude_rate, color = sex, group = sex))+
+        geom_path()+
+        facet_wrap(.~cancer_label, scales = "free_y",
+                   labeller = label_wrap_gen(),
+                   ncol = 6
+                   )+
+        labs(y = "Crude incidence rate per 100,000", x = "Age group", color = NULL)+
+        theme_bw()+
+        # Show only every third label on x-axis
+        scale_x_discrete(breaks = \(x)x[seq(3, length(x), by = 3)])+
+        theme(axis.text.x = element_text(angle = 50, vjust = 0.8),
+              legend.position = "top")
+
+```
+:::
 
 ##### Tables
 ::: {.panel-tabset}
